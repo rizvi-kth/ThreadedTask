@@ -13,7 +13,7 @@ namespace Tasks
 
         }
 
-        public void TestTaskSimple()
+        public void TestTask_ContinueWith()
         {
             Task<int> t1 = Task.Run(() =>
             {
@@ -119,9 +119,66 @@ namespace Tasks
             //finalTask.Wait();
         }
 
+        public void TestTaskWithLamdaInLoop()
+        {
+            // Create the task object by using an Action(Of Object) to pass in the loop
+            // counter. This produces an UNEXPECTED RESULT.
+            Console.WriteLine("\nInvalid Task# for the 10 threads:\n");
+            Task[] taskArray = new Task[10];
+            for (int i = 0; i < taskArray.Length; i++)
+            {
+                taskArray[i] = Task.Factory.StartNew((Object obj) => {
+                                                                        var data = new CustomData()
+                                                                        {
+                                                                            Name = i,
+                                                                            CreationTime = DateTime.Now.Ticks,
+                                                                            ThreadNum = Thread.CurrentThread.ManagedThreadId
+                                                                        };
+                                                                        Console.WriteLine("Task #{0} created at {1} on thread #{2}.", data.Name, data.CreationTime,data.ThreadNum);
+                                                                       },i);
+            }
+            Task.WaitAll(taskArray);
+
+
+            // You can access the value on each iteration by providing a state object to a task through its constructor. 
+            // The following example modifies the previous example by passsing the CustomData object 
+            // as an argument to the StartNew() method which, in turn, is passed to the lambda expression.
+            // This produces the EXPECTED RESULT.
+            Console.WriteLine("\nFixed Task# for the 10 threads:\n");
+            Task[] taskArray2 = new Task[10];
+            for (int i = 0; i < taskArray2.Length; i++)
+            {
+                taskArray2[i] = Task.Factory.StartNew((Object obj) => {
+                                                                        var data = obj as CustomData;
+                                                                        data.ThreadNum = Thread.CurrentThread.ManagedThreadId;
+                                                                        Console.WriteLine("Task #{0} created at {1} on thread #{2}.", data.Name, data.CreationTime, data.ThreadNum);
+                                                                    }, new CustomData(){Name = i,CreationTime = DateTime.Now.Ticks});
+            }
+            Task.WaitAll(taskArray2);
+
+            // This state is passed as an argument to the task delegate, and 
+            // it can be accessed from the task object by using the Task.AsyncState property.
+            Console.WriteLine("\nThis state can be accessed with Task.AsyncState property even after the Tasks are completed :\n");
+            foreach (var task in taskArray2)
+            {
+                var data = task.AsyncState as CustomData;
+                if (data != null)
+                    Console.WriteLine("Task #{0} created at {1}, ran on thread #{2}.",
+                                      data.Name, data.CreationTime, data.ThreadNum);
+            }
+
+
+
+        }
+
         public void TestParallel()
         {
-            // Comparison Parallel For VS Normal For
+            //-- Creating and running tasks implicitly --
+            //The Parallel class provides a convenient way to run any number of arbitrary statements concurrently.
+            //The Parallel class has a couple of static methods—For, ForEach, and Invoke—that you can use to parallelize work.
+            //Just pass in an Action delegate for each item of work.The easiest way to create these delegates is to use lambda
+            //expressions.The lambda expression can either call a named method or provide the code inline.
+
 
             // PARALLEL FOR
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -138,26 +195,7 @@ namespace Tasks
             });
             watch.Stop();
             Console.WriteLine("Time took {0} Milliseconds", watch.ElapsedMilliseconds);
-
-
-            // NORMAL FOR
-            //var watch = System.Diagnostics.Stopwatch.StartNew();
-            //for (int j = 0; j < 100000; j++)
-            //{
-            //    if (isPrime(j))
-            //    {
-            //        Console.WriteLine("{0} is Prime.", j);
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine("{0} is not Prime.", j);
-            //    }
-            //}
-            //watch.Stop();
-            //Console.WriteLine("Time took {0} Milliseconds", watch.ElapsedMilliseconds);
-
-
-
+            
         }
 
         public static bool isPrime(int number)
@@ -173,6 +211,30 @@ namespace Tasks
             }
 
             return true;
+        }
+
+        public void ParallelBreak()
+        {
+            //You can cancel the loop by using the ParallelLoopState object.
+            //You have two options to do this: Break or Stop.
+            //Break ensures that all iterations that are currently running will be finished. 
+            //Stop just terminates everything.
+
+            ParallelLoopResult result = Parallel.
+              For(0, 1000, (int i, ParallelLoopState loopState) =>
+                                                                  {
+                                                                      if (i == 500)
+                                                                      {
+                                                                          Console.WriteLine("Breaking loop");
+                                                                          loopState.Break();
+                                                                        //Console.WriteLine("Stoping loop");
+                                                                        //loopState.Stop();
+                                                                    }
+                                                                  });
+
+            Console.WriteLine("IsCompleted:{0}", result.IsCompleted ? "true" : "false");
+            Console.WriteLine("LowestBreakIteration:{0}", result.LowestBreakIteration.HasValue ? result.LowestBreakIteration.ToString() : "NULL");
+
         }
 
         public void TestRaceCondition()
@@ -267,5 +329,12 @@ namespace Tasks
             Console.WriteLine("The value of n:{0}", result);
 
         }
+    }
+
+    class CustomData
+    {
+        public long CreationTime;
+        public int Name;
+        public int ThreadNum;
     }
 }
