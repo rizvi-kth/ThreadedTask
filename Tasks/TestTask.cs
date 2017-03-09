@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,85 @@ namespace Tasks
     {
         public TestTask()
         {
+        }
+
+        public static int _threadStaticfield= 0;
+        public void TestThreadStatic()
+        {
+            // A thread has its own call stack that stores all the methods that are executed.
+            // Local variables are stored on the call stack and are private to the thread.
+            // A thread can also have its own data that’s not a local variable.
+            // By marking a field with the ThreadStatic attribute, each thread gets its own copy of a field.
+
+            Parallel.Invoke(() => increaseThreadStaticfield(10),
+                            () => increaseThreadStaticfield(100),
+                            () => increaseThreadStaticfield(1000),
+                            () => increaseThreadStaticfield(10000),
+                            () => increaseThreadStaticfield(100000),
+                            () => increaseThreadStaticfield(1000000)
+                );
+
+        }
+
+        public void increaseThreadStaticfield(int p)
+        {
+            int len = p.ToString().Length;
+            string threadIdentifyer = "*".PadLeft(len,'*'); 
+
+            for (int i = 0; i < 10; i++)
+            {
+                Console.Write("Thread# {0} ", threadIdentifyer);
+                Console.WriteLine(" P: {0}", p++);
+                
+            }
+        }
+
+
+        public static ThreadLocal<int> _field = new ThreadLocal<int>(() =>
+                                                    {
+                                                        // Field value is initialized with current ThreadID
+                                                        return Thread.CurrentThread.ManagedThreadId;
+                                                    });
+        public void TestThreadLocal()
+        {
+            // If you want to use local data in a thread and INITIALIZE it for each thread, 
+            // you can use the ThreadLocal<T> class. 
+            // Without a ThreadLocal<T> all the variables in the main thread 
+            // is shared among children, so needs locking to avoid conflict. 
+
+            // The following two thread has their own copy of the _field;
+            // even it is a Main thread (static)variable.
+
+            new Thread(() =>
+            {
+                for (int x = 0; x < 20; x++)
+                {
+                    Console.WriteLine("Thread A(_field.value:{1}): i:{0}", x, _field.Value++);
+                }
+            }).Start();
+            new Thread(() =>
+            {
+                for (int x = 0; x < 20; x++)
+                {
+                    Console.WriteLine("Thread B(_field.value:{1}):           i:{0}", x, _field.Value++);
+                }
+            }).Start();
+        }
+
+        public void TestThreadPool()
+        {
+            const int UPPER = 10;
+            for (int i = 0; i < UPPER; i++)
+            {
+                // With out state information
+                ThreadPool.QueueUserWorkItem((state) => Console.WriteLine("Without state info S is :{0}", state ));
+            }
+
+            for (int i = 0; i < UPPER; i++)
+            {
+                // With state information
+                ThreadPool.QueueUserWorkItem((state) => Console.WriteLine("With state info S is :{0}", (int)state), i);
+            }
 
         }
 
@@ -53,6 +133,10 @@ namespace Tasks
                 
                 return results;
             });
+
+            // If the parent does not wait here all the assignments will not complete properly.
+            // <Try comment this line and observe!>
+            parentTask.Wait();
 
             var finalTask = parentTask.ContinueWith((parent) =>
             {
@@ -121,21 +205,21 @@ namespace Tasks
 
         public void TestTaskWithLamdaInLoop()
         {
-            // Create the task object by using an Action(Of Object) to pass in the loop
-            // counter. This produces an UNEXPECTED RESULT.
+            // Create the task object by using an Action(Of Object) to pass in the loop counter.
+            // This produces an UNEXPECTED RESULT.
             Console.WriteLine("\nInvalid Task# for the 10 threads:\n");
             Task[] taskArray = new Task[10];
             for (int i = 0; i < taskArray.Length; i++)
             {
-                taskArray[i] = Task.Factory.StartNew((Object obj) => {
-                                                                        var data = new CustomData()
-                                                                        {
-                                                                            Name = i,
-                                                                            CreationTime = DateTime.Now.Ticks,
-                                                                            ThreadNum = Thread.CurrentThread.ManagedThreadId
-                                                                        };
-                                                                        Console.WriteLine("Task #{0} created at {1} on thread #{2}.", data.Name, data.CreationTime,data.ThreadNum);
-                                                                       },i);
+                taskArray[i] = Task.Factory.StartNew(() => {
+                                                                var data = new CustomData()
+                                                                {
+                                                                    Name = i,
+                                                                    CreationTime = DateTime.Now.Ticks,
+                                                                    ThreadNum = Thread.CurrentThread.ManagedThreadId
+                                                                };
+                                                                Console.WriteLine("Task #{0} created at {1} on thread #{2}.", data.Name, data.CreationTime,data.ThreadNum);
+                                                            });
             }
             Task.WaitAll(taskArray);
 
@@ -169,6 +253,51 @@ namespace Tasks
 
 
 
+        }
+
+        public void TestTaskWithLamdaInLoop2()
+        {
+            Action<int>[] jobs = new Action<int>[10];
+            for(int p= 0; p < jobs.Length; p++)
+            {
+                jobs[p] = (indx)=> { Console.WriteLine("Job running # {0}", indx);};
+            }
+
+            
+            Task[] tasks = new Task[10];
+            for(int i=0;i < tasks.Length; i++)
+            {
+                // This produces the UNEXPECTED RESULT.
+                //tasks[i] = new Task(()=> RunJob((indx) => { Console.WriteLine("Job running # {0}", indx); }, i)); 
+
+                // This produces the EXPECTED RESULT.
+                tasks[i] = new Task((obj) =>
+                {
+                    RunJob(
+                          (ob) => { Console.WriteLine("Job running # {0}", (int)ob); }
+                        , (int)obj);
+                }, i);
+                
+                
+                // ** With Tasks are in an array **
+                
+                // This produces the RUNTIME EXCEPTION. 
+                //tasks[i] = new Task(() => RunJob(jobs[i], i)); 
+
+                // This produces the EXPECTED RESULT. 
+                //tasks[i] = new Task((obj) => RunJob(jobs[(int)obj], (int)obj), i); 
+
+
+                tasks[i].Start();
+                
+            }
+            
+            Task.WaitAll(tasks);
+        }
+
+        public void RunJob(Action<int> act, int ix)
+        {
+            act(ix);
         }
 
         public void TestParallel()
@@ -329,6 +458,9 @@ namespace Tasks
             Console.WriteLine("The value of n:{0}", result);
 
         }
+
+
+        
     }
 
     class CustomData
