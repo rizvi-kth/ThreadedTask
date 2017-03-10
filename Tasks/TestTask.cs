@@ -230,6 +230,8 @@ namespace Tasks
             // The following example modifies the previous example by passsing the CustomData object 
             // as an argument to the StartNew() method which, in turn, is passed to the lambda expression.
             // This produces the EXPECTED RESULT.
+            // Now the value of i(for-loop) will be captited when the Thread is declared, not when the thread starts.
+            // This will stop race condition and solve the problem.
             Console.WriteLine("\nFixed Task# for the 10 threads:\n");
             Task[] taskArray2 = new Task[10];
             for (int i = 0; i < taskArray2.Length; i++)
