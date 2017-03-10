@@ -44,7 +44,6 @@ namespace Tasks
             }
         }
 
-
         public static ThreadLocal<int> _field = new ThreadLocal<int>(() =>
                                                     {
                                                         // Field value is initialized with current ThreadID
@@ -205,8 +204,11 @@ namespace Tasks
 
         public void TestTaskWithLamdaInLoop()
         {
-            // Create the task object by using an Action(Of Object) to pass in the loop counter.
+            // Create a task in a loop and pass in the loop counter in the task.
             // This produces an UNEXPECTED RESULT.
+            // The main thread which is incrementing the value of i, will come to a rece condition 
+            // with a new threade created in the loop.
+            // A time-lag required to create a thread will fail the new thread in the race of accessing the value of i.
             Console.WriteLine("\nInvalid Task# for the 10 threads:\n");
             Task[] taskArray = new Task[10];
             for (int i = 0; i < taskArray.Length; i++)
