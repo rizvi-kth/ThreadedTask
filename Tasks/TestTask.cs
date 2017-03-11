@@ -13,7 +13,8 @@ namespace Tasks
         {
         }
 
-        public static int _threadStaticfield= 0;
+        [ThreadStatic]
+        private static string _threadStaticfield = string.Empty;
         public void TestThreadStatic()
         {
             // A thread has its own call stack that stores all the methods that are executed.
@@ -21,8 +22,7 @@ namespace Tasks
             // A thread can also have its own data that’s not a local variable.
             // By marking a field with the ThreadStatic attribute, each thread gets its own copy of a field.
 
-            Parallel.Invoke(() => increaseThreadStaticfield(10),
-                            () => increaseThreadStaticfield(100),
+            Parallel.Invoke(() => increaseThreadStaticfield(100),
                             () => increaseThreadStaticfield(1000),
                             () => increaseThreadStaticfield(10000),
                             () => increaseThreadStaticfield(100000),
@@ -34,13 +34,14 @@ namespace Tasks
         public void increaseThreadStaticfield(int p)
         {
             int len = p.ToString().Length;
-            string threadIdentifyer = "*".PadLeft(len,'*'); 
+            
+            // [ThreadStatic] attribute made this field local to its thread. 
+            _threadStaticfield = "*".PadLeft(len,'*'); 
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 50; i++)
             {
-                Console.Write("Thread# {0} ", threadIdentifyer);
-                Console.WriteLine(" P: {0}", p++);
-                
+                // Number of * should be the length of the digit (ie. ** for 10, **** for 1030)
+                Console.WriteLine("Thread# {0} P: {1}", _threadStaticfield, p++);
             }
         }
 
@@ -92,7 +93,7 @@ namespace Tasks
 
         }
 
-        public void TestTask_ContinueWith()
+        public void TestTaskContinueWith()
         {
             Task<int> t1 = Task.Run(() =>
             {
@@ -102,23 +103,77 @@ namespace Tasks
                 return 50;
             });
 
-            t1.ContinueWith((t) =>
+
+            Task t2 = t1.ContinueWith((t) =>
             {
                 Console.WriteLine("ContinueWith: canceled!");
             }, TaskContinuationOptions.OnlyOnCanceled);
 
-            t1.ContinueWith((t) =>
+            t2 = t1.ContinueWith((t) =>
             {
                 Console.WriteLine("ContinueWith: faulted!");
             }, TaskContinuationOptions.OnlyOnFaulted);
 
-            t1.ContinueWith((t) =>
+            t2 = t1.ContinueWith((t) =>
             {
                 Console.WriteLine("ContinueWith: completed successfully! Value:{0}", t.Result);
             }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
             //Console.WriteLine(t1.Result);
-            t1.Wait();
+            //t1.Wait();
+            t2.Wait();
+        }
+        
+        public void TestTaskCancelation()
+        {
+            // Create a cancelation token.
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken token = cancellationTokenSource.Token;
+
+            Task t1 = Task.Factory.StartNew(() =>
+            {
+                int n = 0;
+                while (n <= 20 )
+                {
+                    if (token.IsCancellationRequested)
+                    {
+                        // Clean up code goes here ...
+                        token.ThrowIfCancellationRequested();
+                    }
+
+                    Thread.Sleep(1000);
+                    Console.WriteLine("".PadLeft(n,'*'));
+                    n++;
+                }
+
+            }, token); // Pass the cancellation token.
+
+            Console.Write("Press c to cancel the thread!");
+            var input = Console.ReadKey();
+            if (input.KeyChar.Equals('c'))
+            {
+                Console.WriteLine("\nCancelling the task ...");
+                cancellationTokenSource.Cancel();
+            }
+
+            // Cancellation will throw an exception in the thread which will bobble up to the caller.
+            // So, Here you need to prepare for cancellation exception.
+            try
+            {
+                t1.Wait();
+
+            }
+            catch (AggregateException e)
+            {
+                //Console.WriteLine(e.InnerException);
+                if (e.InnerException is OperationCanceledException)
+                    Console.WriteLine("Task has been canceled!");
+                else
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
         }
 
         public void TestTaskParent()
@@ -155,6 +210,7 @@ namespace Tasks
             {
                 var results = new Int32[3];
                 // A TaskFactory is created with a certain configuration and can then be used to create Tasks with that configuration.
+                // Most prefered approach
                 TaskFactory tf = new TaskFactory(TaskCreationOptions.AttachedToParent, TaskContinuationOptions.None);
                 tf.StartNew(() => { results[0] = 1; Thread.Sleep(1000); });
                 tf.StartNew(() => { results[1] = 2; Thread.Sleep(1000); });
@@ -396,8 +452,7 @@ namespace Tasks
             // Implement lock to avoid race condition.
             Console.WriteLine("The value of n:{0}",n);
         }
-
-
+        
         public void TestLock()
         {
             int n = 0;
@@ -462,8 +517,6 @@ namespace Tasks
             Console.WriteLine("The value of n:{0}", result);
 
         }
-
-
         
     }
 

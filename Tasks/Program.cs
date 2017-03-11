@@ -11,10 +11,11 @@ namespace Tasks
         static void Main(string[] args)
         {
             var ts = new TestTask();
-            ts.TestThreadStatic();
+            //ts.TestThreadStatic();
             //ts.TestThreadLocal();
             //ts.TestThreadPool();
-            //ts.TestTask_ContinueWith();
+            //ts.TestTaskContinueWith();
+            ts.TestTaskCancelation();
             //ts.TestTaskParent();
             //ts.TestTaskFactory();
             //ts.TestTaskWaitAll();
