@@ -15,12 +15,12 @@ namespace Tasks
             //ts.TestThreadLocal();
             //ts.TestThreadPool();
             //ts.TestTaskContinueWith();
-            ts.TestTaskCancelation();
+            //ts.TestTaskCancelation();
             //ts.TestTaskParent();
             //ts.TestTaskFactory();
             //ts.TestTaskWaitAll();
             //ts.TestTaskWithLamdaInLoop();
-            //ts.TestTaskWithLamdaInLoop2();
+            ts.TestTaskWithLamdaInLoop2();
             //ts.TestParallel();
             //ts.ParallelBreak();
             //ts.TestRaceCondition();

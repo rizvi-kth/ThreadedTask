@@ -331,27 +331,23 @@ namespace Tasks
                 //tasks[i] = new Task(()=> RunJob((indx) => { Console.WriteLine("Job running # {0}", indx); }, i)); 
 
                 // This produces the EXPECTED RESULT.
-                tasks[i] = new Task((obj) =>
+                tasks[i] = new Task((i_obj) =>
                 {
                     RunJob(
                           (ob) => { Console.WriteLine("Job running # {0}", (int)ob); }
-                        , (int)obj);
+                        , (int)i_obj);
                 }, i);
                 
                 
                 // ** With Tasks are in an array **
-                
                 // This produces the RUNTIME EXCEPTION. 
                 //tasks[i] = new Task(() => RunJob(jobs[i], i)); 
 
                 // This produces the EXPECTED RESULT. 
                 //tasks[i] = new Task((obj) => RunJob(jobs[(int)obj], (int)obj), i); 
 
-
                 tasks[i].Start();
-                
             }
-            
             Task.WaitAll(tasks);
         }
 
