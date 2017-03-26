@@ -45,8 +45,7 @@ namespace Tasks
             }
         }
 
-        public static ThreadLocal<int> _field = new ThreadLocal<int>(() =>
-                                                    {
+        public static ThreadLocal<int> _field = new ThreadLocal<int>(() => {
                                                         // Field value is initialized with current ThreadID
                                                         return Thread.CurrentThread.ManagedThreadId;
                                                     });
