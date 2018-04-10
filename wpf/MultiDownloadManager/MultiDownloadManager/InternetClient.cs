@@ -61,6 +61,22 @@ namespace MultiDownloadManager
 
         }
 
+        public async Task<HttpResponseMessage> BrowsEmptySiteAsync()
+        {
+            HttpClient httpClient;
+            httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromMilliseconds(3000);
+
+            httpClient.BaseAddress = new Uri("http://sdjhfks.com/");
+            //RaiseReadComplete("<Just Called Facebook done>"); 
+            var p = await httpClient.GetAsync("");
+            // When this event is raised is Inportant (???)
+            // Should be after await (???)
+            RaiseReadComplete("<Empty site response > " + p.StatusCode.ToString());
+            return p;
+
+        }
+
     }
 
 

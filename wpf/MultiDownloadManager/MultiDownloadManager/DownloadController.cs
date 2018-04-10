@@ -59,6 +59,9 @@ namespace MultiDownloadManager
 
         public async Task<HttpResponseMessage> BrowsYahooAsync() => await internetClient.BrowsYahooAsync();
         public async Task<HttpResponseMessage> BrowsFacebookAsync() => await internetClient.BrowsFacebookAsync();
+        public async Task<HttpResponseMessage> BrowsEmptyAsync() => await internetClient.BrowsEmptySiteAsync();
+
+
 
     }
 

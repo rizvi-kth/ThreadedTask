@@ -7,12 +7,14 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525" Loaded="Window_Loaded">
     <Grid>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="39,38,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="39,63,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1"/>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="39,161,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_2"/>
+        <Button Content="Google" HorizontalAlignment="Left" Margin="39,38,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <Button Content="Facebook" HorizontalAlignment="Left" Margin="39,63,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1"/>
+        <Button Content="Run Chain" HorizontalAlignment="Left" Margin="39,118,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_2"/>
         <TextBox x:Name="TextBox1" HorizontalAlignment="Left" Height="23" Margin="152,35,0,0" TextWrapping="Wrap" Text=">" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="TextBox2" HorizontalAlignment="Left" Height="23" Margin="152,60,0,0" TextWrapping="Wrap" Text=">" VerticalAlignment="Top" Width="120"/>
-        <TextBox x:Name="TextBox3" HorizontalAlignment="Left" Height="23" Margin="119,162,0,0" TextWrapping="Wrap" Text=">>" VerticalAlignment="Top" Width="316"/>
+        <TextBox x:Name="TextBox3" HorizontalAlignment="Left" Height="23" Margin="152,115,0,0" TextWrapping="Wrap" Text=">>" VerticalAlignment="Top" Width="316"/>
+        <Button Content="Returned Exception with await" HorizontalAlignment="Left" Margin="39,177,0,0" VerticalAlignment="Top" Width="184" Click="Button_Click_3"/>
+        <Button Content="Returned Exception with continueWith" HorizontalAlignment="Left" Margin="39,203,0,0" VerticalAlignment="Top" Width="225" Click="Button_Click_4"/>
 
     </Grid>
 </Window>
